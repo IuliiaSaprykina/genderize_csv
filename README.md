@@ -67,3 +67,4 @@ Python 3.* (Known working: 3.6.1)
 
 #### "Chunks" explanation:
 The Python Genderize client used limits requests to 10 names. To work around this, the code breaks the list of names down into chunks of 10. This approach also has the benefit of preventing data loss in case of a crash/server error as the results are written to the output file every 10 names.
+# genderize_csv_Iuliia
