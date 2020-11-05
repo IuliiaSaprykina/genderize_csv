@@ -5,8 +5,11 @@ import os.path
 import time
 import argparse
 import logging
+import tempfile
+from csv import DictReader, DictWriter
 
 import jpyhelper as jpyh
+
 
 def genderize(args):
     print(args)
@@ -43,14 +46,14 @@ def genderize(args):
         sys.exit()
 
     #Some set up stuff
-    ##csv.field_size_limit(sys.maxsize)
+    csv.field_size_limit(sys.maxsize)
 
     #Initialize API key
     if not args.key == "NO_API":
         print("--- API key: " + args.key + "\n")
         genderize = Genderize(
             user_agent='GenderizeDocs/0.0',
-            api_key=args.key)
+            api_key='fbd97f77eda3dbe82b4c610576f22728')
         key_present = True
     else:
         print("--- No API key provided.\n")
@@ -58,11 +61,25 @@ def genderize(args):
 
     #Open ifile
     with open(ifile, 'r', encoding="utf8") as csvfile:
-        readCSV = csv.reader(csvfile, delimiter=',', skipinitialspace=True)
+        readCSV = csv.reader(csvfile, delimiter=',',  quotechar='"', skipinitialspace=True)
+        line_count = 0
         first_name = []
+        users_id = []
+        fields = []
+        rows = []
+        fields = next(readCSV)
         for row in readCSV: #Read CSV into first_name list
-            first_name.append(row[0])
-            ##first_name.append(row)
+            rows.append(row)
+            line_count += 1
+        
+        for row in rows:
+            for col in row:
+                # print (col)
+                first_name.append(row[0])
+                first_name = list(dict.fromkeys(first_name))
+                users_id.append(row[1])
+                users_id = list(dict.fromkeys(users_id))
+
 
         if args.noheader == False:
             first_name.pop(0) #Remove header
@@ -73,9 +90,10 @@ def genderize(args):
                 o_first_name.append(b)
 
         if args.auto == True:
-            uniq_first_name = list(set(o_first_name))
-            chunks = list(jpyh.splitlist(uniq_first_name, 10));
-            print("--- Read CSV with " + str(len(first_name)) + " first_name. " + str(len(uniq_first_name)) + " unique.")
+            # uniq_first_name = list(set(o_first_name))
+            chunks = list(jpyh.splitlist(first_name, 10));
+            print ("Chunks: ", chunks)
+            print("--- Read CSV with " + str(len(first_name)) + " first_name. " + str(len(first_name)) + " unique.")
         else:
             chunks = list(jpyh.splitlist(first_name, 10));
             print("--- Read CSV with " + str(len(first_name)) + " first_name")
@@ -94,15 +112,18 @@ def genderize(args):
 
         if args.auto == True:
             ofile = ofile + ".tmp"
-
-        response_time = [];
+            # print(ofile)
+          
+        response_time = []
         gender_responses = list()
+        output_fields = ["first_name", "gender", "probability", "count"]
         with open(ofile, 'w', newline='', encoding="utf8") as f:
-            writer = csv.writer(f)
-            writer.writerow(list(["first_name", "gender", "probability", "count"]))
+            writer = csv.writer(f, delimiter='-')
+            writer.writerow(output_fields)
             chunks_len = len(chunks)
             stopped = False
             for index, chunk in enumerate(chunks):
+                # print (chunk)
                 if stopped:
                     break
                 success = False
@@ -112,13 +133,25 @@ def genderize(args):
 
                         if key_present:
                             dataset = genderize.get(chunk)
+                            for el in dataset:
+                                print (el)
+                            # print (dataset)
                         else:
-                            dataset = Genderize().get(chunk)
+                            dataset = Genderize(
+                                user_agent='GenderizeDocs/0.0',
+                                api_key='fbd97f77eda3dbe82b4c610576f22728').get(chunk)
+                            # i = 0
+                            # for el in dataset:
+                            #     for key, value in list(el.items()):
+                            #         if key == "count":
+                            #             del dataset[i]["count"]
+                                    
+                            #     i += 1
 
                         gender_responses.append(dataset)
                         success = True
                     except GenderizeException as e:
-                        #print("\n" + str(e))
+                        print("\n" + str(e))
                         logger.error(e)
 
                         #Error handling
@@ -134,6 +167,7 @@ def genderize(args):
                         break
 
                     response_time.append(time.time() - start)
+                    # print("Gender response: ", gender_responses)
                     print("Processed chunk " + str(index + 1) + " of " + str(chunks_len) + " -- Time remaining (est.): " + \
                         str( round( (sum(response_time) / len(response_time) * (chunks_len - index - 1)), 3)) + "s")
 
@@ -148,18 +182,84 @@ def genderize(args):
                 #Create master dict
                 gender_dict = dict()
                 for response in gender_responses:
+                    print (response)
                     for d in response:
-                        gender_dict[d.get("name")] = [d.get("gender"), d.get("probability"), d.get("count")]
-
+                        gender_dict[d.get("name")] = [d.get("count"), d.get("gender"), d.get("probability")]
+                
+                
                 filename, file_extension = os.path.splitext(ofile)
                 with open(filename, 'w', newline='', encoding="utf8") as f:
-                    writer = csv.writer(f)
-                    writer.writerow(list(["first_name", "gender", "probability", "count"]))
+                    writer = csv.writer(f, delimiter='-')
+                    writer.writerow(list(["name", "count", "gender", "probability"]))
 
                     for name in o_first_name:
                         data = gender_dict.get(name)
-                        writer.writerow([name, data[0], data[1], data[2]])
+                        writer.writerow([name, data[1], data[1], data[2]])
+            # print(data)
+            if args.override == True:
+                gender_responses = list()
+                output_fields = ["first_name", "female", "male"]
+                with open(ofile, 'w', newline='', encoding="utf8") as f:
+                    writer = csv.writer(f, delimiter='-')
+                    writer.DictWriter(f, fieldnames = output_fields)
+                    writer.writeheader()
+                    chunks_len = len(chunks)
+                    stopped = False
+                    for index, chunk in enumerate(chunks):
+                        # print (chunk)
+                        if stopped:
+                            break
+                        success = False
+                        while not success:
+                            try:
+                                start = time.time()
+
+                                if key_present:
+                                    dataset = genderize.get(chunk)
+                                    for el in dataset:
+                                        print (el)
+                                    # print (dataset)
+                                else:
+                                    dataset = Genderize(
+                                        user_agent='GenderizeDocs/0.0',
+                                        api_key='fbd97f77eda3dbe82b4c610576f22728').get(chunk)
+
+                                gender_responses.append(dataset)
+                                success = True
+                            except GenderizeException as e:
+                                print("\n" + str(e))
+                                logger.error(e)
+
+                                #Error handling
+                                if "response not in JSON format" in str(e) and args.catch == True:
+                                    if jpyh.query_yes_no("\n---!! 502 detected, try again?") == True:
+                                        success = False
+                                        continue
+                                elif "Invalid API key" in str(e) and args.catch == True:
+                                    print("\n---!! Error, invalid API key! Check log file for details.\n")
+                                else:
+                                    print("\n---!! GenderizeException - You probably exceeded the request limit, please add or purchase a API key. Check log file for details.\n")
+                                stopped = True
+                                break
+
+                            response_time.append(time.time() - start)
+                            print("Gender response: ", gender_responses)
+                            print("Processed chunk " + str(index + 1) + " of " + str(chunks_len) + " -- Time remaining (est.): " + \
+                                str( round( (sum(response_time) / len(response_time) * (chunks_len - index - 1)), 3)) + "s")
+
+                            for data in dataset:
+                                writer.writerow({'name': data['name']})
+                                if data['gender'] == 'male':
+                                    writer.writerow({'male': 1})
+                                    writer.writerow({'female': 0})
+                                else:
+                                    writer.writerow({'male': 0})
+                                    writer.writerow({'female': 1})
+                            break
+
+                # print ("Dataset", dataset)
             print("Done!\n")
+
 
 
 if __name__ == "__main__":
@@ -172,5 +272,6 @@ if __name__ == "__main__":
     parser.add_argument('-c','--catch', help='Try to handle errors gracefully', required=False, action='store_true', default=True)
     parser.add_argument('-a','--auto', help='Automatically complete gender for identical first_name', required=False, action='store_true', default=False)
     parser.add_argument('-nh','--noheader', help='Input has no header row', required=False, action='store_true', default=False)
+    parser.add_argument('-OVR','--override', help='Override default column output. ', required=False, action='store_true', default=False)
 
     genderize(parser.parse_args())

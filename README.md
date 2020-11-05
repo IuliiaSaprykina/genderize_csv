@@ -57,8 +57,8 @@ Python 3.* (Known working: 3.6.1)
 - Support for genderize.io API key (allows processing of more than 1000 names /mo).
 
 ### To-do:
-- Add ability to search multi-column CSV file for column with specific header [easy]
-- Add support for alternate output formats [moderate]
+<!-- - Add ability to search multi-column CSV file for column with specific header [easy] -->
+<!-- - Add support for alternate output formats [moderate] -->
 - Add support for using file as a module [easy]
 - Add ability to pick up name processing from data in .tmp file if error occurs while using _auto_ argument [hard]
 - ~~Add support for optionally caching gender responses and searching through them for identical names before asking genderize for the data. This would lower API key request usage.~~ DONE
