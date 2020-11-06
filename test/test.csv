@@ -1,6 +1,6 @@
-name, user_id
-Andrea,496568
-Oscar,2033363
-Tiffany,345761
-Taylor,1640301
-James,425818
+user_id,name
+496568,Andrea
+2033363,Oscar
+345761,Tiffany
+1640301,Taylor
+425818,James
