@@ -65,17 +65,17 @@ def genderize(args):
         line_count = 0
         first_name = []
         users_id = []
-        fields = []
+        input_fields = []
         rows = []
-        fields = next(readCSV)
+        input_fields = next(readCSV)
         for row in readCSV: #Read CSV into first_name list
             rows.append(row)
             line_count += 1
 
-        if len(fields) > 1:
+        if len(input_fields) > 1:
             for row in rows:
                 first_name.append(row[1])
-                first_name = list(dict.fromkeys(first_name))
+                # first_name = list(dict.fromkeys(first_name))
                 users_id.append(row[0])
                 users_id = list(dict.fromkeys(users_id))
         else:
@@ -83,7 +83,11 @@ def genderize(args):
                 first_name.append(row[0])
                 first_name = list(dict.fromkeys(first_name))
 
-        if args.noheader == False:
+        
+        
+        # print("input fields", input_fields)
+
+        if args.noheader == False and first_name[0] in input_fields:
             first_name.pop(0) #Remove header
 
         o_first_name = list()
@@ -116,13 +120,17 @@ def genderize(args):
             ofile = ofile + ".tmp"
             # print(ofile)
           
+        run_once = True
         response_time = []
         gender_responses = list()
-        output_fields = ["first_name", "gender", "probability", "count"]
+        output_fields = [*input_fields, "gender", "probability", "count"]
+        # print ("Output fields", output_fields)
         with open(ofile, 'w', newline='', encoding="utf8") as f:
-            writer = csv.writer(f, delimiter='-')
+            writer = csv.writer(f)
             writer.writerow(output_fields)
+            # print("Chunks before write it", chunks)
             chunks_len = len(chunks)
+            print(chunks)
             stopped = False
             for index, chunk in enumerate(chunks):
                 if stopped:
@@ -134,12 +142,18 @@ def genderize(args):
 
                         if key_present:
                             dataset = genderize.get(chunk)
+                            
                         else:
                             dataset = Genderize(
                                 user_agent='GenderizeDocs/0.0',
                                 api_key='169f6a8e933dcec15a57235d7fde49d6').get(chunk)
+                            
+                            # print (dataset)
+                       
 
                         gender_responses.append(dataset)
+
+                        # print (gender_responses)
                         success = True
                     except GenderizeException as e:
                         print("\n" + str(e))
@@ -162,13 +176,39 @@ def genderize(args):
                     print("Processed chunk " + str(index + 1) + " of " + str(chunks_len) + " -- Time remaining (est.): " + \
                         str( round( (sum(response_time) / len(response_time) * (chunks_len - index - 1)), 3)) + "s")
 
-                    for data in dataset:
-                        writer.writerow(data.values())
+                    # i = 0
+                    # for data in dataset:
+                    #     # rows[i].append(data['gender'])
+                    #     writer.writerows(rows[i])
+                    #     i += 1
                     break
+            j = 0
+            response_arr = list()
+            for data in gender_responses:
+                for el in data:
+                    response_arr.append(el)
+                    # rows[j].append(el['gender'])
+                    # print (rows[j])
+            
+            for row in rows:
+                row.append(response_arr[j]['gender'])
+                row.append(response_arr[j]['probability'])
+                row.append(response_arr[j]['count'])
+                j += 1
+                print (row)
+            
+            for row in rows:
+                writer.writerow(row)
+            # i = 0
+            # for data in dataset:
+            #     writer.writerows(rows[i])
+            #     i += 1
+
+
 
             if args.auto == True:
                 print("\nCompleting identical first_name...\n")
-                #AUTOCOMPLETE first_name
+                #AUTOCOMPLETE first_namey
 
                 #Create master dict
                 gender_dict = dict()
@@ -188,7 +228,7 @@ def genderize(args):
                         writer.writerow([name, data[1], data[1], data[2]])
             
         if args.override == True:
-            override_fields = ['first_name', 'female', 'male']
+            override_fields = [*input_fields, 'female', 'male']
             override_dict = dict()
             for response in gender_responses:
                 print (response)
@@ -200,7 +240,7 @@ def genderize(args):
                 chunks_len = len(chunks)
                 stopped = False
                 for index, chunk in enumerate(chunks):
-                    print ("Chunk", chunk)
+                    # print ("Chunk", chunk)
                     if stopped:
                         break
                     success = False
@@ -238,11 +278,11 @@ def genderize(args):
                         print("Processed chunk " + str(index + 1) + " of " + str(chunks_len) + " -- Time remaining (est.): " + \
                             str( round( (sum(response_time) / len(response_time) * (chunks_len - index - 1)), 3)) + "s")
 
-                        for data in dataset:
-                            if data['gender'] == 'male':
-                                writer.writerow({'first_name': data['name'], 'female': 0, 'male': 1})
-                            else:
-                                writer.writerow({'first_name': data['name'], 'female': 1, 'male': 0})
+                        # for data in dataset:
+                        #     if data['gender'] == 'male':
+                        #         writer.writerow({'first_name': data['name'], 'female': 0, 'male': 1})
+                        #     else:
+                        #         writer.writerow({'first_name': data['name'], 'female': 1, 'male': 0})
 
             
                         break
