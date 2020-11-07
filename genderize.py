@@ -98,7 +98,7 @@ def genderize(args):
         if args.auto == True:
             # uniq_first_name = list(set(o_first_name))
             chunks = list(jpyh.splitlist(first_name, 10));
-            print ("Chunks: ", chunks)
+            # print ("Chunks: ", chunks)
             print("--- Read CSV with " + str(len(first_name)) + " first_name. " + str(len(first_name)) + " unique.")
         else:
             chunks = list(jpyh.splitlist(first_name, 10));
@@ -120,127 +120,105 @@ def genderize(args):
             ofile = ofile + ".tmp"
             # print(ofile)
           
-        run_once = True
         response_time = []
         gender_responses = list()
         output_fields = [*input_fields, "gender", "probability", "count"]
-        # print ("Output fields", output_fields)
-        with open(ofile, 'w', newline='', encoding="utf8") as f:
-            writer = csv.writer(f)
-            writer.writerow(output_fields)
-            # print("Chunks before write it", chunks)
-            chunks_len = len(chunks)
-            print(chunks)
-            stopped = False
-            for index, chunk in enumerate(chunks):
-                if stopped:
-                    break
-                success = False
-                while not success:
-                    try:
-                        start = time.time()
-
-                        if key_present:
-                            dataset = genderize.get(chunk)
-                            
-                        else:
-                            dataset = Genderize(
-                                user_agent='GenderizeDocs/0.0',
-                                api_key='169f6a8e933dcec15a57235d7fde49d6').get(chunk)
-                            
-                            # print (dataset)
-                       
-
-                        gender_responses.append(dataset)
-
-                        # print (gender_responses)
-                        success = True
-                    except GenderizeException as e:
-                        print("\n" + str(e))
-                        logger.error(e)
-
-                        #Error handling
-                        if "response not in JSON format" in str(e) and args.catch == True:
-                            if jpyh.query_yes_no("\n---!! 502 detected, try again?") == True:
-                                success = False
-                                continue
-                        elif "Invalid API key" in str(e) and args.catch == True:
-                            print("\n---!! Error, invalid API key! Check log file for details.\n")
-                        else:
-                            print("\n---!! GenderizeException - You probably exceeded the request limit, please add or purchase a API key. Check log file for details.\n")
-                        stopped = True
-                        break
-
-                    response_time.append(time.time() - start)
-                    # print("Gender response: ", gender_responses)
-                    print("Processed chunk " + str(index + 1) + " of " + str(chunks_len) + " -- Time remaining (est.): " + \
-                        str( round( (sum(response_time) / len(response_time) * (chunks_len - index - 1)), 3)) + "s")
-
-                    # i = 0
-                    # for data in dataset:
-                    #     # rows[i].append(data['gender'])
-                    #     writer.writerows(rows[i])
-                    #     i += 1
-                    break
-            j = 0
-            response_arr = list()
-            for data in gender_responses:
-                for el in data:
-                    response_arr.append(el)
-                    # rows[j].append(el['gender'])
-                    # print (rows[j])
-            
-            for row in rows:
-                row.append(response_arr[j]['gender'])
-                row.append(response_arr[j]['probability'])
-                row.append(response_arr[j]['count'])
-                j += 1
-                print (row)
-            
-            for row in rows:
-                writer.writerow(row)
-            # i = 0
-            # for data in dataset:
-            #     writer.writerows(rows[i])
-            #     i += 1
-
-
-
-            if args.auto == True:
-                print("\nCompleting identical first_name...\n")
-                #AUTOCOMPLETE first_namey
-
-                #Create master dict
-                gender_dict = dict()
-                for response in gender_responses:
-                    print (response)
-                    for d in response:
-                        gender_dict[d.get("name")] = [d.get("count"), d.get("gender"), d.get("probability")]
-                
-                
-                filename, file_extension = os.path.splitext(ofile)
-                with open(filename, 'w', newline='', encoding="utf8") as f:
-                    writer = csv.writer(f, delimiter='-')
-                    writer.writerow(list(["name", "count", "gender", "probability"]))
-
-                    for name in o_first_name:
-                        data = gender_dict.get(name)
-                        writer.writerow([name, data[1], data[1], data[2]])
-            
-        if args.override == True:
-            override_fields = [*input_fields, 'female', 'male']
-            override_dict = dict()
-            for response in gender_responses:
-                print (response)
-                for d in response:
-                    override_dict[d.get("name")] = d.get("gender")
+        if args.override == False:
             with open(ofile, 'w', newline='', encoding="utf8") as f:
-                writer = csv.DictWriter(f, fieldnames=override_fields)
-                writer.writeheader()
+                writer = csv.writer(f)
+                writer.writerow(output_fields)
                 chunks_len = len(chunks)
                 stopped = False
                 for index, chunk in enumerate(chunks):
-                    # print ("Chunk", chunk)
+                    if stopped:
+                        break
+                    success = False
+                    while not success:
+                        try:
+                            start = time.time()
+
+                            if key_present:
+                                dataset = genderize.get(chunk)
+                                
+                            else:
+                                dataset = Genderize(
+                                    user_agent='GenderizeDocs/0.0',
+                                    api_key='169f6a8e933dcec15a57235d7fde49d6').get(chunk)
+                                
+                            gender_responses.append(dataset)
+                            success = True
+                        except GenderizeException as e:
+                            print("\n" + str(e))
+                            logger.error(e)
+
+                            #Error handling
+                            if "response not in JSON format" in str(e) and args.catch == True:
+                                if jpyh.query_yes_no("\n---!! 502 detected, try again?") == True:
+                                    success = False
+                                    continue
+                            elif "Invalid API key" in str(e) and args.catch == True:
+                                print("\n---!! Error, invalid API key! Check log file for details.\n")
+                            else:
+                                print("\n---!! GenderizeException - You probably exceeded the request limit, please add or purchase a API key. Check log file for details.\n")
+                            stopped = True
+                            break
+
+                        response_time.append(time.time() - start)
+                        # print("Gender response: ", gender_responses)
+                        print("Processed chunk " + str(index + 1) + " of " + str(chunks_len) + " -- Time remaining (est.): " + \
+                            str( round( (sum(response_time) / len(response_time) * (chunks_len - index - 1)), 3)) + "s")
+
+                        # i = 0
+                        # for data in dataset:
+                        #     # rows[i].append(data['gender'])
+                        #     writer.writerows(rows[i])
+                        #     i += 1
+                        break
+                j = 0
+                response_arr = list()
+                for data in gender_responses:
+                    for el in data:
+                        response_arr.append(el)
+                
+                for row in rows:
+                    row.append(response_arr[j]['gender'])
+                    row.append(response_arr[j]['probability'])
+                    row.append(response_arr[j]['count'])
+                    j += 1
+                    # print (row)
+                
+                for row in rows:
+                    writer.writerow(row)
+
+
+        if args.auto == True:
+            print("\nCompleting identical first_name...\n")
+            #AUTOCOMPLETE first_namey
+
+            #Create master dict
+            gender_dict = dict()
+            for response in gender_responses:
+                for d in response:
+                    gender_dict[d.get("name")] = [d.get("count"), d.get("gender"), d.get("probability")]
+                
+                
+            filename, file_extension = os.path.splitext(ofile)
+            with open(filename, 'w', newline='', encoding="utf8") as f:
+                writer = csv.writer(f, delimiter='-')
+                writer.writerow(list(["name", "count", "gender", "probability"]))
+
+                for name in o_first_name:
+                    data = gender_dict.get(name)
+                    writer.writerow([name, data[1], data[1], data[2]])
+            
+        if args.override == True:
+            output_fields = [*input_fields]
+            with open(ofile, 'w', newline='', encoding="utf8") as f:
+                writer = csv.writer(f)
+                writer.writerow(output_fields)
+                chunks_len = len(chunks)
+                stopped = False
+                for index, chunk in enumerate(chunks):
                     if stopped:
                         break
                     success = False
@@ -274,18 +252,31 @@ def genderize(args):
                             break
 
                         response_time.append(time.time() - start)
-                        # print("Gender response: ", gender_responses)
                         print("Processed chunk " + str(index + 1) + " of " + str(chunks_len) + " -- Time remaining (est.): " + \
                             str( round( (sum(response_time) / len(response_time) * (chunks_len - index - 1)), 3)) + "s")
-
-                        # for data in dataset:
-                        #     if data['gender'] == 'male':
-                        #         writer.writerow({'first_name': data['name'], 'female': 0, 'male': 1})
-                        #     else:
-                        #         writer.writerow({'first_name': data['name'], 'female': 1, 'male': 0})
-
             
                         break
+                
+                i = 0
+                response_arr = list()
+                for data in gender_responses:
+                    for el in data:
+                        response_arr.append(el)
+                
+
+                index = len(rows)
+                for row in rows:
+                    # print(rows[-1][-2])
+                    if response_arr[i]['gender'] == 'male':
+                        rows[i][-1] = "1"
+                        rows[i][-2] = "0"
+                    else :
+                        rows[i][-1] = "0"
+                        rows[i][-2] = "1"
+                    i += 1
+                
+                for row in rows:
+                    writer.writerow(row)
             print("Done!\n")
 
 
