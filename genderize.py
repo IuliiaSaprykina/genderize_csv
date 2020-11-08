@@ -75,17 +75,10 @@ def genderize(args):
         if len(input_fields) > 1:
             for row in rows:
                 first_name.append(row[1])
-                # first_name = list(dict.fromkeys(first_name))
                 users_id.append(row[0])
-                users_id = list(dict.fromkeys(users_id))
         else:
             for row in rows:
                 first_name.append(row[0])
-                first_name = list(dict.fromkeys(first_name))
-
-        
-        
-        # print("input fields", input_fields)
 
         if args.noheader == False and first_name[0] in input_fields:
             first_name.pop(0) #Remove header
@@ -98,7 +91,6 @@ def genderize(args):
         if args.auto == True:
             # uniq_first_name = list(set(o_first_name))
             chunks = list(jpyh.splitlist(first_name, 10));
-            # print ("Chunks: ", chunks)
             print("--- Read CSV with " + str(len(first_name)) + " first_name. " + str(len(first_name)) + " unique.")
         else:
             chunks = list(jpyh.splitlist(first_name, 10));
@@ -118,7 +110,6 @@ def genderize(args):
 
         if args.auto == True:
             ofile = ofile + ".tmp"
-            # print(ofile)
           
         response_time = []
         gender_responses = list()
@@ -164,15 +155,9 @@ def genderize(args):
                             break
 
                         response_time.append(time.time() - start)
-                        # print("Gender response: ", gender_responses)
                         print("Processed chunk " + str(index + 1) + " of " + str(chunks_len) + " -- Time remaining (est.): " + \
                             str( round( (sum(response_time) / len(response_time) * (chunks_len - index - 1)), 3)) + "s")
 
-                        # i = 0
-                        # for data in dataset:
-                        #     # rows[i].append(data['gender'])
-                        #     writer.writerows(rows[i])
-                        #     i += 1
                         break
                 j = 0
                 response_arr = list()
@@ -185,7 +170,6 @@ def genderize(args):
                     row.append(response_arr[j]['probability'])
                     row.append(response_arr[j]['count'])
                     j += 1
-                    # print (row)
                 
                 for row in rows:
                     writer.writerow(row)
