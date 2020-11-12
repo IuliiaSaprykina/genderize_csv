@@ -56,17 +56,5 @@ Python 3.* (Known working: 3.6.1)
 - Writes data after processing 10 names so little data is lost if an error occurs 
 - Support for genderize.io API key (allows processing of more than 1000 names /mo).
 
-### To-do:
-<!-- - Add ability to search multi-column CSV file for column with specific header [easy] -->
-<!-- - Add support for alternate output formats [moderate] -->
-- Add support for using file as a module [easy]
-- Add ability to pick up name processing from data in .tmp file if error occurs while using _auto_ argument [hard]
-- ~~Add support for optionally caching gender responses and searching through them for identical names before asking genderize for the data. This would lower API key request usage.~~ DONE
-- ~~Catch 502 bad gateway error and retry the request. Currently the program will just catch the error, print it, and exit.~~ DONE
-- ~~Add better command line flags~~ DONE
-
 #### "Chunks" explanation:
 The Python Genderize client used limits requests to 10 names. To work around this, the code breaks the list of names down into chunks of 10. This approach also has the benefit of preventing data loss in case of a crash/server error as the results are written to the output file every 10 names.
-# genderize_csv_Iuliia
-# genderize_csv
-# genderize_csv
