@@ -1,6 +1,4 @@
 #Ignore the following
 __pycache__/
-*.py[cod]
-*$py.class
 .idea
 .vscode
